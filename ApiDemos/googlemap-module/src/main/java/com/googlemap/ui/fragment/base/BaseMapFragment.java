@@ -217,19 +217,27 @@ public class BaseMapFragment extends BaseFragment implements
         }
     }
 
+    /**
+     * 根据 经纬度反解析地理位置
+     *
+     * @param context   context
+     * @param latitude  latitude
+     * @param longitude longitude
+     * @return address
+     */
     public String getAddress(Context context, double latitude, double longitude) {
         Geocoder geocoder = new Geocoder(context, Locale.getDefault());
         try {
             List<Address> addresses = geocoder.getFromLocation(latitude, longitude, 1);
-            //  Log.i("得到位置当前", "/" + addresses);
-            //"经度："+String.valueOf(address.get(0).getLongitude()*1E6)+"\n";
-            //"纬度："+String.valueOf(address.get(0).getLatitude()*1E6)+"\n";
-            //"国家："+address.get(0).getCountryName()+"\n";
-            //"省："+address.get(0).getAdminArea()+"\n";
-            //"城市："+address.get(0).getLocality()+"\n";
-            // "名称："+address.get(0).getAddressLine(1)+"\n";
-            //"街道："+address.get(0).getAddressLine(0);
-            return addresses.get(0).getLocality();
+            Log.i("得到位置当前", "/" + addresses);
+            String fullAddress = "经度：" + String.valueOf(addresses.get(0).getLongitude() * 1E6) + "\n";
+            fullAddress += "纬度：" + String.valueOf(addresses.get(0).getLatitude() * 1E6) + "\n";
+            fullAddress += "国家：" + addresses.get(0).getCountryName() + "\n";
+            fullAddress += "省：" + addresses.get(0).getAdminArea() + "\n";
+            fullAddress += "城市：" + addresses.get(0).getLocality() + "\n";
+            fullAddress += "名称：" + addresses.get(0).getAddressLine(1) + "\n";
+            fullAddress += "街道：" + addresses.get(0).getAddressLine(0);
+            return fullAddress;
         } catch (Exception e) {
             e.printStackTrace();
             return "未知";
@@ -239,9 +247,9 @@ public class BaseMapFragment extends BaseFragment implements
     /**
      * 根据地名返回一个有经纬度location,如果查询不到经纬度  则默认经纬度是0
      *
-     * @param context
-     * @param address
-     * @return
+     * @param context context
+     * @param address address
+     * @return location
      */
     public static Location getLocation(Context context, String address) {
         Geocoder geocoder = new Geocoder(context, Locale.getDefault());
