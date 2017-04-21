@@ -134,5 +134,8 @@ public final class DemoDetailsList {
             new DemoDetails(R.string.visible_region_demo_label,
                     R.string.visible_region_demo_description,
                     VisibleRegionDemoActivity.class),
+            new DemoDetails(R.string.test_google_map_001,
+                    R.string.test_google_map_001_comments,
+                    TestGoogleMapDemo01Activity.class),
     };
 }

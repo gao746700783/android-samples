@@ -14,30 +14,17 @@
      See the License for the specific language governing permissions and
      limitations under the License.
 -->
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.example.mapdemo" >
-
-    <!--
-         The ACCESS_COARSE/FINE_LOCATION permissions are not required to use
-         Google Maps Android API v2, but you must specify either coarse or fine
-         location permissions for the 'MyLocation' functionality.
-    -->
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-
-    <!-- EXTERNAL_STORAGE permissions are optional for Android 6.0 onwards. -->
-    <uses-permission
-        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
-        android:maxSdkVersion="22" />
-    <uses-permission
-        android:name="android.permission.READ_EXTERNAL_STORAGE"
-        android:maxSdkVersion="22" />
+<manifest package="com.example.mapdemo"
+          xmlns:android="http://schemas.android.com/apk/res/android"
+          xmlns:tools="http://schemas.android.com/tools">
 
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/demo_title"
         android:supportsRtl="true"
-        android:theme="@style/AppTheme" >
+        android:theme="@style/AppTheme"
+        tools:replace="android:label">
 
         <!--
              The API key for Google Maps-based APIs is defined as a string resource.
@@ -49,7 +36,7 @@
         -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="@string/google_maps_key" />
+            android:value="@string/google_maps_key"/>
 
         <activity android:name=".MainActivity">
             <intent-filter>
@@ -168,6 +155,9 @@
         <activity
             android:name=".VisibleRegionDemoActivity"
             android:label="@string/visible_region_demo_label"/>
+        <activity
+            android:name=".TestGoogleMapDemo01Activity"
+            android:label="@string/test_google_map_001_comments"/>
 
     </application>
 
