@@ -49,6 +49,8 @@ public class BaseMapFragment extends BaseFragment implements
     private LocationListener mLocationListener;
     private LocationManager mLocationManager;
 
+    private static final int REQUEST_CODE_LOCATION = 0x010;
+
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -158,9 +160,8 @@ public class BaseMapFragment extends BaseFragment implements
 
                     EasyPermissions.requestPermissions(mFContext,
                             "需要请求位置权限",
-                            0,
-                            Manifest.permission.ACCESS_FINE_LOCATION,
-                            Manifest.permission.ACCESS_COARSE_LOCATION
+                            REQUEST_CODE_LOCATION,
+                            Manifest.permission.ACCESS_FINE_LOCATION
                     );
                 } else {
 
@@ -208,9 +209,8 @@ public class BaseMapFragment extends BaseFragment implements
 
             EasyPermissions.requestPermissions(mFContext,
                     "需要请求位置权限",
-                    0,
-                    Manifest.permission.ACCESS_FINE_LOCATION,
-                    Manifest.permission.ACCESS_COARSE_LOCATION
+                    REQUEST_CODE_LOCATION,
+                    Manifest.permission.ACCESS_FINE_LOCATION
             );
         } else {
             mMap.setMyLocationEnabled(true);
@@ -287,21 +287,21 @@ public class BaseMapFragment extends BaseFragment implements
     @Override
     public void onPermissionsGranted(int requestCode, List<String> perms) {
         if (ActivityCompat.checkSelfPermission(mContext,
-                Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
+                Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
                 && ActivityCompat.checkSelfPermission(mContext,
-                Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            return;
+                Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+
+            mMap.setMyLocationEnabled(true);
+
+            mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
+                    1000, 0, mLocationListener);
         }
-
-        mMap.setMyLocationEnabled(true);
-
-        mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
-                1000, 0, mLocationListener);
     }
 
     @Override
     public void onPermissionsDenied(int requestCode, List<String> perms) {
-
+        Log.d(TAG, "onPermissionsDenied:" + requestCode + ":" + perms.size());
+        Log.i(TAG, "onPermissionsDenied called!");
         // (Optional) Check whether the user denied any permissions and checked "NEVER ASK AGAIN."
         // This will display a dialog directing them to enable the permission in app settings.
         if (EasyPermissions.somePermissionPermanentlyDenied(this, perms)) {
