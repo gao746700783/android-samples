@@ -12,6 +12,7 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
@@ -48,6 +49,7 @@ public class BaseMapFragment extends BaseFragment implements
 
     private LocationListener mLocationListener;
     private LocationManager mLocationManager;
+    private String mCurrentAddress;
 
     private static final int REQUEST_CODE_LOCATION = 0x010;
 
@@ -159,7 +161,7 @@ public class BaseMapFragment extends BaseFragment implements
                         Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
 
                     EasyPermissions.requestPermissions(mFContext,
-                            "需要请求位置权限",
+                            "使用地图功能，需要请求位置权限来进行定位",
                             REQUEST_CODE_LOCATION,
                             Manifest.permission.ACCESS_FINE_LOCATION
                     );
@@ -175,11 +177,10 @@ public class BaseMapFragment extends BaseFragment implements
                                 + location.getLatitude() + " Lng: "
                                 + location.getLongitude());
 
-//                        // remove update of listener
-//                        mLocationManager.removeUpdates(mLocationListener);
+                        // // remove update of listener
+                        //mLocationManager.removeUpdates(mLocationListener);
 
-                        String address = getAddress(mContext, location.getLatitude(), location.getLongitude());
-                        Log.i(TAG, "address:" + address);
+                        getAddress(mContext, location);
 
                         LatLng mMarkerPosition = new LatLng(location.getLatitude(), location.getLongitude());
                         MarkerOptions markerOptions = new MarkerOptions()
@@ -208,7 +209,7 @@ public class BaseMapFragment extends BaseFragment implements
                 Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
 
             EasyPermissions.requestPermissions(mFContext,
-                    "需要请求位置权限",
+                    "使用地图功能，需要请求位置权限来进行定位",
                     REQUEST_CODE_LOCATION,
                     Manifest.permission.ACCESS_FINE_LOCATION
             );
@@ -220,28 +221,38 @@ public class BaseMapFragment extends BaseFragment implements
     /**
      * 根据 经纬度反解析地理位置
      *
-     * @param context   context
-     * @param latitude  latitude
-     * @param longitude longitude
+     * @param context  context
+     * @param location location
      * @return address
      */
-    public String getAddress(Context context, double latitude, double longitude) {
-        Geocoder geocoder = new Geocoder(context, Locale.getDefault());
-        try {
-            List<Address> addresses = geocoder.getFromLocation(latitude, longitude, 1);
-            Log.i("得到位置当前", "/" + addresses);
-            String fullAddress = "经度：" + String.valueOf(addresses.get(0).getLongitude() * 1E6) + "\n";
-            fullAddress += "纬度：" + String.valueOf(addresses.get(0).getLatitude() * 1E6) + "\n";
-            fullAddress += "国家：" + addresses.get(0).getCountryName() + "\n";
-            fullAddress += "省：" + addresses.get(0).getAdminArea() + "\n";
-            fullAddress += "城市：" + addresses.get(0).getLocality() + "\n";
-            fullAddress += "名称：" + addresses.get(0).getAddressLine(1) + "\n";
-            fullAddress += "街道：" + addresses.get(0).getAddressLine(0);
-            return fullAddress;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return "未知";
-        }
+    public void getAddress(final Context context, final Location location) {
+
+        new Handler().post(new Runnable() {
+            @Override
+            public void run() {
+                Geocoder geocoder = new Geocoder(context, Locale.getDefault());
+                try {
+
+                    double latitude = location.getLatitude();
+                    double longitude = location.getLongitude();
+
+                    List<Address> addresses = geocoder.getFromLocation(latitude, longitude, 1);
+                    Log.i("得到位置当前", "/" + addresses);
+                    String fullAddress = "经度：" + String.valueOf(addresses.get(0).getLongitude() * 1E6) + "\n";
+                    fullAddress += "纬度：" + String.valueOf(addresses.get(0).getLatitude() * 1E6) + "\n";
+                    fullAddress += "国家：" + addresses.get(0).getCountryName() + "\n";
+                    fullAddress += "省：" + addresses.get(0).getAdminArea() + "\n";
+                    fullAddress += "城市：" + addresses.get(0).getLocality() + "\n";
+                    fullAddress += "名称：" + addresses.get(0).getAddressLine(1) + "\n";
+                    fullAddress += "街道：" + addresses.get(0).getAddressLine(0);
+                    mCurrentAddress = fullAddress;
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    mCurrentAddress = "未知";
+                }
+            }
+        });
+
     }
 
     /**
