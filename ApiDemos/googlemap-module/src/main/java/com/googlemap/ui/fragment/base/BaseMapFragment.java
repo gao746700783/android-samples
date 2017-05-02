@@ -5,6 +5,7 @@ package com.googlemap.ui.fragment.base;
 
 import android.Manifest;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Address;
 import android.location.Geocoder;
@@ -13,6 +14,7 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.Handler;
+import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
@@ -39,6 +41,8 @@ import java.util.Locale;
 import pub.devrel.easypermissions.AppSettingsDialog;
 import pub.devrel.easypermissions.EasyPermissions;
 
+import static android.content.Context.LOCATION_SERVICE;
+
 /**
  * @author King
  */
@@ -57,10 +61,11 @@ public class BaseMapFragment extends BaseFragment implements
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        mLocationManager = (LocationManager) mContext.getSystemService(Context.LOCATION_SERVICE);
+        mLocationManager = (LocationManager) mContext.getSystemService(LOCATION_SERVICE);
 
         mLocationListener = new LocationListener() {
-            public void onLocationChanged(Location location) { //当坐标改变时触发此函数，如果Provider传进相同的坐标，它就不会被触发
+            public void onLocationChanged(Location location) {
+                //当坐标改变时触发此函数，如果Provider传进相同的坐标，它就不会被触发
                 // log it when the location changes
                 if (location != null) {
                     Log.i(TAG, "Location changed : Lat: "
@@ -155,46 +160,43 @@ public class BaseMapFragment extends BaseFragment implements
                         "Example de Message for Android",
                         Toast.LENGTH_SHORT).show();
 
+                // check permissions
                 if (ActivityCompat.checkSelfPermission(mContext,
-                        Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
-                        && ActivityCompat.checkSelfPermission(mContext,
-                        Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                        Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
 
                     EasyPermissions.requestPermissions(mFContext,
                             "使用地图功能，需要请求位置权限来进行定位",
                             REQUEST_CODE_LOCATION,
                             Manifest.permission.ACCESS_FINE_LOCATION
                     );
-                } else {
 
-                    mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
-                            1000, 0, mLocationListener);
-
-                    Location location =
-                            mLocationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-                    if (location != null) {
-                        Log.i(TAG, "Location changed : Lat: "
-                                + location.getLatitude() + " Lng: "
-                                + location.getLongitude());
-
-                        // // remove update of listener
-                        //mLocationManager.removeUpdates(mLocationListener);
-
-                        getAddress(mContext, location);
-
-                        LatLng mMarkerPosition = new LatLng(location.getLatitude(), location.getLongitude());
-                        MarkerOptions markerOptions = new MarkerOptions()
-                                .position(mMarkerPosition)
-                                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE))
-                                //.icon(BitmapDescriptorFactory.fromResource(R.drawable.common_full_open_on_phone))
-                                .draggable(true);
-                        mMap.addMarker(markerOptions);
-                        //mMap.setOnMarkerDragListener(this);
-                        //mMap.setOnMarkerClickListener(this);
-
-                        mMap.animateCamera(CameraUpdateFactory.newLatLng(mMarkerPosition));
-                    }
+                    return true;
                 }
+
+                // check location service is or not enabled
+                if (!isEnableLocationService()) {
+                    return true;
+                }
+
+                //
+                mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
+                        1000, 0, mLocationListener);
+
+                Location location =
+                        mLocationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+                if (location != null) {
+                    Log.i(TAG, "Location changed : Lat: "
+                            + location.getLatitude() + " Lng: "
+                            + location.getLongitude());
+
+                    // // remove update of listener
+                    //mLocationManager.removeUpdates(mLocationListener);
+
+                    //getAddress(mContext, location);
+
+                    addMarkerAndAnimate(location);
+                }
+
                 return true;
             }
         });
@@ -204,9 +206,7 @@ public class BaseMapFragment extends BaseFragment implements
         //                Manifest.permission.ACCESS_FINE_LOCATION,
         //                Manifest.permission.ACCESS_COARSE_LOCATION)) {
         if (ActivityCompat.checkSelfPermission(mContext,
-                Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
-                && ActivityCompat.checkSelfPermission(mContext,
-                Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
 
             EasyPermissions.requestPermissions(mFContext,
                     "使用地图功能，需要请求位置权限来进行定位",
@@ -216,6 +216,55 @@ public class BaseMapFragment extends BaseFragment implements
         } else {
             mMap.setMyLocationEnabled(true);
         }
+    }
+
+    private void addMarkerAndAnimate(Location location) {
+        LatLng mMarkerPosition = new LatLng(location.getLatitude(), location.getLongitude());
+        MarkerOptions markerOptions = new MarkerOptions()
+                .position(mMarkerPosition)
+                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE))
+                //.icon(BitmapDescriptorFactory.fromResource(R.drawable.common_full_open_on_phone))
+                .draggable(true);
+        mMap.addMarker(markerOptions);
+        //mMap.setOnMarkerDragListener(this);
+        //mMap.setOnMarkerClickListener(this);
+
+        mMap.animateCamera(CameraUpdateFactory.newLatLng(mMarkerPosition));
+    }
+
+    private boolean isEnableLocationService() {
+        LocationManager service = (LocationManager) getActivity().
+                getSystemService(LOCATION_SERVICE);
+
+        boolean enabledGPS = service
+                .isProviderEnabled(LocationManager.GPS_PROVIDER);
+        boolean enabledWiFi = service
+                .isProviderEnabled(LocationManager.NETWORK_PROVIDER);
+
+        if (!enabledGPS) {
+
+            Toast.makeText(getActivity(),
+                    "GPS signal not found", Toast.LENGTH_LONG)
+                    .show();
+            Intent intent = new Intent(
+                    Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+            startActivity(intent);
+
+            return false;
+        } else if (!enabledWiFi) {
+
+            Toast.makeText(getActivity(),
+                    "Network signal not found",
+                    Toast.LENGTH_LONG).show();
+            Intent intent = new Intent(
+                    Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+            startActivity(intent);
+
+            return false;
+        }
+
+        return true;
+
     }
 
     /**
@@ -238,8 +287,10 @@ public class BaseMapFragment extends BaseFragment implements
 
                     List<Address> addresses = geocoder.getFromLocation(latitude, longitude, 1);
                     Log.i("得到位置当前", "/" + addresses);
-                    String fullAddress = "经度：" + String.valueOf(addresses.get(0).getLongitude() * 1E6) + "\n";
-                    fullAddress += "纬度：" + String.valueOf(addresses.get(0).getLatitude() * 1E6) + "\n";
+                    String fullAddress = "经度：" +
+                            String.valueOf(addresses.get(0).getLongitude() * 1E6) + "\n";
+                    fullAddress += "纬度：" +
+                            String.valueOf(addresses.get(0).getLatitude() * 1E6) + "\n";
                     fullAddress += "国家：" + addresses.get(0).getCountryName() + "\n";
                     fullAddress += "省：" + addresses.get(0).getAdminArea() + "\n";
                     fullAddress += "城市：" + addresses.get(0).getLocality() + "\n";
@@ -288,7 +339,8 @@ public class BaseMapFragment extends BaseFragment implements
     //    }
 
     @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+                                           @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
 
         // Forward results to EasyPermissions
